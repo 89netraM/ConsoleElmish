@@ -7,11 +7,18 @@ namespace ConsoleApp
 {
 	public class TextComponent : Component<EmptyState>
 	{
-		public string Text { get; }
+		private static string Center(string text, int width)
+		{
+			return text.PadLeft((width - text.Length) / 2 + text.Length).PadRight(width);
+		}
 
-		public TextComponent(string text)
+		public string Text { get; }
+		public bool IsCentered { get; }
+
+		public TextComponent(string text, bool isCentered = false)
 		{
 			Text = text ?? throw new ArgumentNullException(nameof(text));
+			IsCentered = isCentered;
 		}
 
 		public override Buffer Render(uint height, uint width)
@@ -31,7 +38,15 @@ namespace ConsoleApp
 					sb.Append(' ');
 					sb.Append(words[w++]);
 				}
-				buffer.Add(new Area(r, 0, 1, (uint)sb.Length), sb.ToString());
+
+				if (IsCentered)
+				{
+					buffer.Add(new Area(r, 0, 1, width), Center(sb.ToString(), (int)width));
+				}
+				else
+				{
+					buffer.Add(new Area(r, 0, 1, (uint)sb.Length), sb.ToString());
+				}
 			}
 
 			if (w != words.Length)

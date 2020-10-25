@@ -26,9 +26,10 @@ namespace ConsoleApp
 			{
 				{
 					new Area(0, 0, height, width),
-					new BorderComponent<EmptyState>(
+					new BorderComponent(
 						new TextComponent(
-							State.Time.ToString("HH:mm:ss")
+							State.Time.ToString("HH:mm:ss"),
+							true
 						)
 					)
 				}
