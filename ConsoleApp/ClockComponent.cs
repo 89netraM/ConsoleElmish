@@ -1,10 +1,11 @@
 ﻿using ConsoleElmish;
+using Buffer = ConsoleElmish.Buffer;
 using System;
 using System.Timers;
 
 namespace ConsoleApp
 {
-	public class ClockComponent : Component<ClockProperties, ClockState>
+	public class ClockComponent : Component<ClockState>
 	{
 		public ClockComponent() : base(new ClockState(DateTime.Now))
 		{
@@ -19,13 +20,22 @@ namespace ConsoleApp
 			State = new ClockState(e.SignalTime);
 		}
 
-		public override void Render(IConsole console, uint height, uint width)
+		public override Buffer Render(uint height, uint width)
 		{
-			console.Draw(0, 0, height, width, new BorderComponent<TextProperties, TextState>(new TextComponent(State.Time.ToString("HH:mm:ss"))));
+			return new Buffer
+			{
+				{
+					new Area(0, 0, height, width),
+					new BorderComponent<EmptyState>(
+						new TextComponent(
+							State.Time.ToString("HH:mm:ss")
+						)
+					)
+				}
+			};
 		}
 	}
 
-	public readonly struct ClockProperties { }
 	public readonly struct ClockState
 	{
 		public DateTime Time { get; }

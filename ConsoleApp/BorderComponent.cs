@@ -2,42 +2,29 @@
 
 namespace ConsoleApp
 {
-	public class BorderComponent<P, S> : Component<BorderProperties<P, S>, BorderState>
+	public class BorderComponent<T> : Component<EmptyState>
 	{
-		public BorderComponent(Component<P, S> child) : base(new BorderProperties<P, S>(child)) { }
+		public Component<T> Child { get; }
 
-		public override void Render(IConsole console, uint height, uint width)
+		public BorderComponent(Component<T> child)
 		{
-			console.Draw(0, 0, '╔');
-			console.Draw(0, width - 1, '╗');
-			console.Draw(height - 1, 0, '╚');
-			console.Draw(height - 1, width - 1, '╝');
-			for (uint c = 1; c < width - 1; c++)
-			{
-				console.Draw(0, c, '═');
-				console.Draw(height - 1, c, '═');
-			}
-			for (uint r = 1; r < height - 1; r++)
-			{
-				console.Draw(r, 0, '║');
-				console.Draw(r, width - 1, '║');
-			}
-
-			if (!(Properties.Child is null))
-			{
-				console.Draw(1, 1, height - 2, width - 2, Properties.Child);
-			}
+			Child = child ?? throw new System.ArgumentNullException(nameof(child));
 		}
 
-	}
-	public readonly struct BorderProperties<P, S>
-	{
-		public Component<P, S> Child { get; }
-
-		public BorderProperties(Component<P, S> child)
+		public override Buffer Render(uint height, uint width)
 		{
-			Child = child;
+			return new Buffer
+			{
+				{ new Area(0, 0, 1, 1), '╔' },
+				{ new Area(0, 1, 1, width - 2), '═' },
+				{ new Area(0, width - 1, 1, 1), '╗' },
+				{ new Area(1, 0, height - 2, 1), '║' },
+				{ new Area(1, width - 1, height - 2, 1), '║' },
+				{ new Area(height - 1, 0, 1, 1), '╚' },
+				{ new Area(height - 1, 1, 1, width - 2), '═' },
+				{ new Area(height - 1, width - 1, 1, 1), '╝' },
+				{ new Area(1, 1, height - 2, width - 2), Child }
+			};
 		}
 	}
-	public readonly struct BorderState { }
 }

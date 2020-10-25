@@ -1,16 +1,24 @@
 ﻿using ConsoleElmish;
+using Buffer = ConsoleElmish.Buffer;
 using System;
 using System.Text;
 
 namespace ConsoleApp
 {
-	public class TextComponent : Component<TextProperties, TextState>
+	public class TextComponent : Component<EmptyState>
 	{
-		public TextComponent(string text) : base(new TextProperties(text)) { }
+		public string Text { get; }
 
-		public override void Render(IConsole console, uint height, uint width)
+		public TextComponent(string text)
 		{
-			string[] words = Properties.Text.Split();
+			Text = text ?? throw new ArgumentNullException(nameof(text));
+		}
+
+		public override Buffer Render(uint height, uint width)
+		{
+			Buffer buffer = new Buffer();
+
+			string[] words = Text.Split();
 			int w = 0;
 			StringBuilder sb = new StringBuilder((int)width);
 
@@ -23,24 +31,15 @@ namespace ConsoleApp
 					sb.Append(' ');
 					sb.Append(words[w++]);
 				}
-				console.Draw(r, 0, sb.ToString());
+				buffer.Add(new Area(r, 0, 1, (uint)sb.Length), sb.ToString());
 			}
 
 			if (w != words.Length)
 			{
-				console.Draw(height - 1, width - 3, "...", ConsoleColor.Red);
+				buffer.Add(new Area(height - 1, width - 3, 1, 3), new ColoredItem<string>("...", ConsoleColor.Red));
 			}
+
+			return buffer;
 		}
 	}
-
-	public readonly struct TextProperties
-	{
-		public string Text { get; }
-
-		public TextProperties(string text)
-		{
-			Text = text ?? throw new ArgumentNullException(nameof(text));
-		}
-	}
-	public readonly struct TextState { }
 }

@@ -2,10 +2,10 @@
 
 namespace ConsoleElmish
 {
-	public interface IRenderable
+	public interface IRenderable : IEquatable<IRenderable>
 	{
-		internal event Action<IRenderable> ReRender;
+		internal event Action ReRender;
 
-		public void Render(IConsole console, uint height, uint width);
+		public Buffer Render(uint height, uint width);
 	}
 }

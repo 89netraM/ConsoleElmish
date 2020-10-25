@@ -7,19 +7,20 @@ namespace ConsoleElmish
 {
 	public class Renderer
 	{
-		private uint startRow;
 		public uint Height { get; }
 		public uint Width { get; }
 
-		public ConsoleColor DefaultColor { get; }
+		public ConsoleColor DefaultForeground { get; }
 
-		private readonly IDictionary<(uint row, uint column), (char character, ConsoleColor color)> buffer = new Dictionary<(uint, uint), (char, ConsoleColor)>();
+		private uint startRow;
+		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> characterBuffer = new Dictionary<(uint, uint), ColoredItem<char>>();
+		private Buffer mainBuffer;
 
-		public Renderer(uint? height = null, uint? width = null, ConsoleColor? defaultColor = null)
+		public Renderer(uint? height = null, uint? width = null, ConsoleColor? defaultForeground = null)
 		{
 			Height = height ?? (uint)SConsole.WindowHeight;
 			Width = width ?? (uint)SConsole.WindowWidth;
-			DefaultColor = defaultColor ?? SConsole.ForegroundColor;
+			DefaultForeground = defaultForeground ?? SConsole.ForegroundColor;
 		}
 
 		public void Render(IRenderable main)
@@ -28,40 +29,38 @@ namespace ConsoleElmish
 			{
 				SConsole.WriteLine();
 			}
-
 			startRow = (uint)SConsole.CursorTop;
-			Render(main, startRow, 0, Height, Width);
-		}
-		private void Render(IRenderable main, uint startRow, uint startColumn, uint height, uint width)
-		{
-			Console console = new Console(height, width, DefaultColor);
-			console.Draw(0, 0, height, width, main);
 
-			foreach (var (area, renderable) in console.Renderables)
+			mainBuffer = new Buffer
 			{
-				renderable.ReRender += Renderable_ReRender(area);
-			}
+				{ new Area(0, 0, Height, Width), new ColoredItem<IRenderable>(main) }
+			};
+			mainBuffer.RePrint += Print;
+			Print();
+		}
 
-			StringBuilder sb = new StringBuilder((int)width);
+		private void Print()
+		{
+			StringBuilder sb = new StringBuilder((int)Width);
 			uint column;
 			ConsoleColor? previousColor;
-			for (uint r = 0; r < height; r++)
+			for (uint r = 0; r < Height; r++)
 			{
 				sb.Clear();
-				column = startColumn;
+				column = 0;
 				previousColor = null;
-				for (uint c = 0; c < width; c++)
+				for (uint c = 0; c < Width; c++)
 				{
-					(char, ConsoleColor)? old = buffer.TryGetValue((r, c), out var o) ? ((char, ConsoleColor)?)o : null;
-					(char character, ConsoleColor color)? current = console.Buffer.TryGetValue((r, c), out var curr) ? ((char, ConsoleColor)?)curr : null;
+					ColoredItem<char>? old = characterBuffer.TryGetValue((r, c), out var o) ? (ColoredItem<char>?)o : null;
+					ColoredItem<char>? current = mainBuffer[(r, c)];
 
 					if (current.HasValue)
 					{
-						buffer[(r, c)] = current.Value;
+						characterBuffer[(r, c)] = current.Value;
 					}
 					else
 					{
-						buffer.Remove((r, c));
+						characterBuffer.Remove((r, c));
 					}
 
 					if (old == current)
@@ -69,16 +68,16 @@ namespace ConsoleElmish
 						PrintSB();
 						column = c + 1;
 					}
-					else if (current.HasValue && current.Value.color != previousColor)
+					else if (current.HasValue && current.Value.Foreground != previousColor)
 					{
 						PrintSB();
 						column = c;
-						sb.Append(current.Value.character);
-						previousColor = current.Value.color;
+						sb.Append(current.Value.Item);
+						previousColor = current.Value.Foreground;
 					}
 					else
 					{
-						sb.Append(current.HasValue ? current.Value.character : ' ');
+						sb.Append(current.HasValue ? current.Value.Item : ' ');
 					}
 				}
 				PrintSB();
@@ -104,14 +103,6 @@ namespace ConsoleElmish
 					}
 				}
 			}
-		}
-
-		private Action<IRenderable> Renderable_ReRender(Area area)
-		{
-			return renderable =>
-			{
-				Render(renderable, startRow + area.Row, area.Column, area.Height, area.Width);
-			};
 		}
 	}
 }
