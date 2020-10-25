@@ -7,6 +7,18 @@ namespace ConsoleElmish
 {
 	public class Renderer
 	{
+		public static Renderer Instance { get; private set; } = null;
+		public static Renderer Create(uint? height = null, uint? width = null, ConsoleColor? defaultForeground = null)
+		{
+			if (!(Instance is null))
+			{
+				throw new InvalidOperationException($"An {nameof(Instance)} already exists");
+			}
+
+			Instance = new Renderer(height, width, defaultForeground);
+			return Instance;
+		}
+
 		public uint Height { get; }
 		public uint Width { get; }
 
@@ -16,7 +28,7 @@ namespace ConsoleElmish
 		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> characterBuffer = new Dictionary<(uint, uint), ColoredItem<char>>();
 		private Buffer mainBuffer;
 
-		public Renderer(uint? height = null, uint? width = null, ConsoleColor? defaultForeground = null)
+		private Renderer(uint? height, uint? width, ConsoleColor? defaultForeground)
 		{
 			Height = height ?? (uint)SConsole.WindowHeight;
 			Width = width ?? (uint)SConsole.WindowWidth;

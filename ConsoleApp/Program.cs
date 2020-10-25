@@ -15,8 +15,8 @@ namespace ConsoleApp
 				Environment.Exit(0);
 			};
 
-			Renderer renderer = new Renderer(4, 40);
-			renderer.Render(new ClockComponent());
+			Renderer.Create(4, 40)
+				.Render(new ClockComponent());
 
 			return Task.Delay(-1);
 		}
