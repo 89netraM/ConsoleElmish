@@ -2,7 +2,7 @@
 
 namespace ConsoleElmish
 {
-	public interface IRenderable : IEquatable<IRenderable>
+	public interface IRenderable : IEquatable<IRenderable>, IDisposable
 	{
 		internal event Action ReRender;
 

@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ConsoleElmish
 {
-	public class Buffer : IEnumerable<((uint row, uint column) position, ColoredItem<char> item)>
+	public class Buffer : IEnumerable<((uint row, uint column) position, ColoredItem<char> item)>, IDisposable
 	{
 		public event Action RePrint;
 
 		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> buffer = new Dictionary<(uint, uint), ColoredItem<char>>();
 
 		public ColoredItem<char>? this[(uint, uint) position] => buffer.TryGetValue(position, out var curr) ? (ColoredItem<char>?)curr : null;
+
+		private readonly IList<(IRenderable item, Buffer buffer)> disposables = new List<(IRenderable, Buffer)>();
 
 		public void Add(Area area, ColoredItem<char> item)
 		{
@@ -34,6 +37,8 @@ namespace ConsoleElmish
 			Buffer innerBuffer = item.Item.Render(area.Height, area.Width);
 			CopyFromBuffer(innerBuffer, area.Row, area.Column, item.Foreground, item.Background);
 
+			disposables.Add((item.Item, innerBuffer));
+
 			innerBuffer.RePrint += InnerBuffer_RePrint;
 			item.Item.ReRender += Item_ReRender;
 
@@ -46,6 +51,9 @@ namespace ConsoleElmish
 			{
 				item.Item.ReRender -= Item_ReRender;
 				innerBuffer.RePrint -= InnerBuffer_RePrint;
+
+				disposables.Remove((item.Item, innerBuffer));
+				innerBuffer.Dispose();
 
 				Add(area, item);
 				RePrint?.Invoke();
@@ -65,5 +73,14 @@ namespace ConsoleElmish
 			return buffer.Select(kvp => (kvp.Key, kvp.Value)).GetEnumerator();
 		}
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+		public void Dispose()
+		{
+			foreach (var (item, innerBuffer) in disposables)
+			{
+				item.Dispose();
+				innerBuffer.Dispose();
+			}
+		}
 	}
 }

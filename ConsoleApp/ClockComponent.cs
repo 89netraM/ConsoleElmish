@@ -7,9 +7,11 @@ namespace ConsoleApp
 {
 	public class ClockComponent : Component<ClockState>
 	{
+		private readonly Timer timer;
+
 		public ClockComponent() : base(new ClockState(DateTime.Now))
 		{
-			Timer timer = new Timer(1000.0d);
+			timer = new Timer(1000.0d);
 			timer.AutoReset = true;
 			timer.Elapsed += Timer_Elapsed;
 			timer.Start();
@@ -34,6 +36,13 @@ namespace ConsoleApp
 					)
 				}
 			};
+		}
+
+		public override void Dispose()
+		{
+			timer.Stop();
+			timer.Elapsed -= Timer_Elapsed;
+			timer.Dispose();
 		}
 	}
 

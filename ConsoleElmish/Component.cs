@@ -34,6 +34,8 @@ namespace ConsoleElmish
 		{
 			return other is Component<T> otherComponent && this == otherComponent;
 		}
+
+		public virtual void Dispose() { }
 	}
 
 	public readonly struct EmptyState { }
