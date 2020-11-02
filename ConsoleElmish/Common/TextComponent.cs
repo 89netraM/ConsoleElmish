@@ -1,17 +1,10 @@
-﻿using ConsoleElmish;
-using Buffer = ConsoleElmish.Buffer;
-using System;
+﻿using System;
 using System.Text;
 
-namespace ConsoleApp
+namespace ConsoleElmish.Common
 {
 	public class TextComponent : Component<EmptyState>
 	{
-		private static string Center(string text, int width)
-		{
-			return text.PadLeft((width - text.Length) / 2 + text.Length).PadRight(width);
-		}
-
 		public string Text { get; }
 		public bool IsCentered { get; }
 
@@ -41,7 +34,7 @@ namespace ConsoleApp
 
 				if (IsCentered)
 				{
-					buffer.Add(new Area(r, 0, 1, width), Center(sb.ToString(), (int)width));
+					buffer.Add(new Area(r, (width - (uint)sb.Length) / 2, 1, (uint)sb.Length), sb.ToString());
 				}
 				else
 				{

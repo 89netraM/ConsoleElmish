@@ -2,6 +2,7 @@
 using Buffer = ConsoleElmish.Buffer;
 using System;
 using System.Timers;
+using ConsoleElmish.Common;
 
 namespace ConsoleApp
 {
@@ -43,7 +44,8 @@ namespace ConsoleApp
 						new TextComponent(
 							State.Time.ToString("HH:mm:ss"),
 							State.IsCentered
-						)
+						),
+						BorderComponent.Style.Thick
 					)
 				}
 			};
