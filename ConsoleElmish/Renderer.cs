@@ -35,7 +35,7 @@ namespace ConsoleElmish
 			DefaultForeground = defaultForeground ?? SConsole.ForegroundColor;
 		}
 
-		public void Render(IRenderable main)
+		public void Render(ColoredItem<IRenderable> main)
 		{
 			if (SConsole.CursorLeft != 0)
 			{
@@ -57,13 +57,14 @@ namespace ConsoleElmish
 				startRow = (uint)SConsole.CursorTop;
 			}
 
-
 			mainBuffer = new Buffer
 			{
-				{ new Area(0, 0, Height, Width), new ColoredItem<IRenderable>(main) }
+				{ new Area(0, 0, Height, Width), main }
 			};
 			mainBuffer.RePrint += Print;
+
 			Print();
+
 		}
 
 		private void Print()
@@ -135,6 +136,16 @@ namespace ConsoleElmish
 					}
 				}
 			}
+
+			SConsole.ResetColor();
+		}
+
+		public void Stop()
+		{
+			mainBuffer.RePrint -= Print;
+
+			SConsole.SetCursorPosition((int)(Width - 1), (int)(startRow + Height - 1));
+			SConsole.WriteLine();
 		}
 	}
 }
