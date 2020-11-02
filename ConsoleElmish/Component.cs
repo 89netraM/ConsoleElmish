@@ -30,6 +30,8 @@ namespace ConsoleElmish
 
 		public abstract Buffer Render(uint height, uint width);
 
+		protected void ForceReRender() => ReRender?.Invoke();
+
 		public bool Equals(IRenderable other)
 		{
 			return other is Component<T> otherComponent && this == otherComponent;
