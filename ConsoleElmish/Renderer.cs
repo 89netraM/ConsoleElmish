@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using SConsole = System.Console;
@@ -41,7 +41,22 @@ namespace ConsoleElmish
 			{
 				SConsole.WriteLine();
 			}
-			startRow = (uint)SConsole.CursorTop;
+
+			if (SConsole.BufferHeight < Height)
+			{
+				SConsole.BufferHeight = (int)Height;
+				startRow = 0;
+			}
+			else if (SConsole.BufferHeight - SConsole.CursorTop < Height)
+			{
+				SConsole.Write(new String('\n', (int)(Height - 1)));
+				startRow = (uint)SConsole.BufferHeight - Height;
+			}
+			else
+			{
+				startRow = (uint)SConsole.CursorTop;
+			}
+
 
 			mainBuffer = new Buffer
 			{
@@ -98,13 +113,9 @@ namespace ConsoleElmish
 				{
 					if (sb.Length > 0)
 					{
-						if (SConsole.CursorTop != (int)(startRow + r))
+						if (SConsole.CursorTop != (int)(startRow + r) || SConsole.CursorLeft != (int)column)
 						{
-							SConsole.CursorTop = (int)(startRow + r);
-						}
-						if (SConsole.CursorLeft != (int)column)
-						{
-							SConsole.CursorLeft = (int)column;
+							SConsole.SetCursorPosition((int)column, (int)(startRow + r));
 						}
 						if (!previousColor.foreground.HasValue || !previousColor.background.HasValue)
 						{
