@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace ConsoleElmish
@@ -12,7 +11,21 @@ namespace ConsoleElmish
 
 		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> buffer = new Dictionary<(uint, uint), ColoredItem<char>>();
 
-		public ColoredItem<char>? this[(uint, uint) position] => buffer.TryGetValue(position, out var curr) ? (ColoredItem<char>?)curr : null;
+		public ColoredItem<char>? this[(uint, uint) position]
+		{
+			get => buffer.TryGetValue(position, out var curr) ? (ColoredItem<char>?)curr : null;
+			set
+			{
+				if (value.HasValue)
+				{
+					buffer[position] = value.Value;
+				}
+				else
+				{
+					buffer.Remove(position);
+				}
+			}
+		}
 
 		private readonly IList<(IRenderable item, Buffer buffer)> disposables = new List<(IRenderable, Buffer)>();
 
@@ -20,7 +33,7 @@ namespace ConsoleElmish
 		{
 			foreach (var position in area)
 			{
-				buffer[position] = item;
+				this[position] = item;
 			}
 		}
 		public void Add(Area area, ColoredItem<string> item)
@@ -28,14 +41,14 @@ namespace ConsoleElmish
 			int i = 0;
 			foreach (var position in area)
 			{
-				buffer[position] = item.WithItem(item.Item[i]);
+				this[position] = item.WithItem(item.Item[i]);
 				i = (i + 1) % item.Item.Length;
 			}
 		}
 		public void Add(Area area, ColoredItem<IRenderable> item)
 		{
 			Buffer innerBuffer = item.Item.Render(area.Height, area.Width);
-			CopyFromBuffer(innerBuffer, area.Row, area.Column, item.Foreground, item.Background);
+			CopyFromBuffer(innerBuffer, area, item.Foreground, item.Background);
 
 			disposables.Add((item.Item, innerBuffer));
 
@@ -44,7 +57,7 @@ namespace ConsoleElmish
 
 			void InnerBuffer_RePrint()
 			{
-				CopyFromBuffer(innerBuffer, area.Row, area.Column, item.Foreground, item.Background);
+				CopyFromBuffer(innerBuffer, area, item.Foreground, item.Background);
 				RePrint?.Invoke();
 			}
 			void Item_ReRender()
@@ -60,15 +73,15 @@ namespace ConsoleElmish
 			}
 		}
 
-		private void CopyFromBuffer(Buffer innerBuffer, uint row, uint column, ConsoleColor? foregorund, ConsoleColor? background)
+		private void CopyFromBuffer(Buffer innerBuffer, Area area, ConsoleColor? foregorund, ConsoleColor? background)
 		{
-			foreach (var ((r, c), innerItem) in innerBuffer)
+			foreach (var p in area.Offsets)
 			{
-				buffer[(row + r, column + c)] = innerItem.WithDefaultColors(foregorund, background);
+				this[(area.Row + p.row, area.Column + p.column)] = innerBuffer[p]?.WithDefaultColors(foregorund, background);
 			}
 		}
 
-		public IEnumerator<((uint, uint), ColoredItem<char>)> GetEnumerator()
+		public IEnumerator<((uint row, uint column) position, ColoredItem<char> item)> GetEnumerator()
 		{
 			return buffer.Select(kvp => (kvp.Key, kvp.Value)).GetEnumerator();
 		}

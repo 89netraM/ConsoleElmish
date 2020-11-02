@@ -12,6 +12,8 @@ namespace ConsoleElmish
 
 		public uint Size => Height * Width;
 
+		public IEnumerable<(uint row, uint column)> Offsets => new Area(0, 0, Height, Width);
+
 		public Area(uint row, uint column, uint height, uint width)
 		{
 			Row = row;
