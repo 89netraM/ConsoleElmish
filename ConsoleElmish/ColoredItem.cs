@@ -2,7 +2,7 @@
 
 namespace ConsoleElmish
 {
-	public readonly struct ColoredItem<T> : IEquatable<ColoredItem<T>> where T : IEquatable<T>
+	public readonly struct ColoredItem<T> : IEquatable<ColoredItem<T>>
 	{
 		public readonly ConsoleColor? Background;
 		public readonly ConsoleColor? Foreground;
@@ -58,8 +58,11 @@ namespace ConsoleElmish
 
 	public static class ColoredItemHelpers
 	{
-		public static ColoredItem<T> WithColors<T>(this T item, ConsoleColor? foreground = null, ConsoleColor? background = null)
-			where T : IEquatable<T> =>
-				new ColoredItem<T>(item, foreground, background);
+		public static ColoredItem<IRenderable> WithColors(this IRenderable item, ConsoleColor? foreground = null, ConsoleColor? background = null) =>
+				new ColoredItem<IRenderable>(item, foreground, background);
+		public static ColoredItem<string> WithColors(this string item, ConsoleColor? foreground = null, ConsoleColor? background = null) =>
+				new ColoredItem<string>(item, foreground, background);
+		public static ColoredItem<char> WithColors(this char item, ConsoleColor? foreground = null, ConsoleColor? background = null) =>
+				new ColoredItem<char>(item, foreground, background);
 	}
 }

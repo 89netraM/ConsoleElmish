@@ -57,12 +57,12 @@ namespace ConsoleElmish.Common
 			}
 		};
 
-		public IRenderable Child { get; }
+		public ColoredItem<IRenderable> Child { get; }
 		public Style BorderStyle { get; }
 
-		public BorderComponent(IRenderable child, Style borderStyle = Style.Double)
+		public BorderComponent(ColoredItem<IRenderable> child, Style borderStyle = Style.Double)
 		{
-			Child = child ?? throw new ArgumentNullException(nameof(child));
+			Child = child;
 			BorderStyle = borderStyle;
 		}
 
@@ -78,7 +78,7 @@ namespace ConsoleElmish.Common
 				{ new Area(height - 1, 0, 1, 1), lineStyleMap[BorderStyle][Line.CornerSW] },
 				{ new Area(height - 1, 1, 1, width - 2), lineStyleMap[BorderStyle][Line.Horizontal] },
 				{ new Area(height - 1, width - 1, 1, 1), lineStyleMap[BorderStyle][Line.CornerSE] },
-				{ new Area(1, 1, height - 2, width - 2), new ColoredItem<IRenderable>(Child) }
+				{ new Area(1, 1, height - 2, width - 2), Child }
 			};
 		}
 

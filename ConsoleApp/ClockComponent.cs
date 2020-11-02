@@ -44,7 +44,7 @@ namespace ConsoleApp
 						new TextComponent(
 							State.Time.ToString("HH:mm:ss"),
 							State.IsCentered
-						),
+						).WithColors(foreground: ConsoleColor.Red),
 						BorderComponent.Style.Thick
 					)
 				}
