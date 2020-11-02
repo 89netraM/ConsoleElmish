@@ -55,4 +55,11 @@ namespace ConsoleElmish
 			return !(left == right);
 		}
 	}
+
+	public static class ColoredItemHelpers
+	{
+		public static ColoredItem<T> WithColors<T>(this T item, ConsoleColor? foreground = null, ConsoleColor? background = null)
+			where T : IEquatable<T> =>
+				new ColoredItem<T>(item, foreground, background);
+	}
 }

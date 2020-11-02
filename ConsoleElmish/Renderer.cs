@@ -55,12 +55,12 @@ namespace ConsoleElmish
 		{
 			StringBuilder sb = new StringBuilder((int)Width);
 			uint column;
-			ConsoleColor? previousColor;
+			(ConsoleColor? foreground, ConsoleColor? background) previousColor;
 			for (uint r = 0; r < Height; r++)
 			{
 				sb.Clear();
 				column = 0;
-				previousColor = null;
+				previousColor = default;
 				for (uint c = 0; c < Width; c++)
 				{
 					ColoredItem<char>? old = characterBuffer.TryGetValue((r, c), out var o) ? (ColoredItem<char>?)o : null;
@@ -80,12 +80,12 @@ namespace ConsoleElmish
 						PrintSB();
 						column = c + 1;
 					}
-					else if (current.HasValue && current.Value.Foreground != previousColor)
+					else if (current.HasValue && (current.Value.Foreground != previousColor.foreground || current.Value.Background != previousColor.background))
 					{
 						PrintSB();
 						column = c;
 						sb.Append(current.Value.Item);
-						previousColor = current.Value.Foreground;
+						previousColor = (current.Value.Foreground, current.Value.Background);
 					}
 					else
 					{
@@ -106,12 +106,21 @@ namespace ConsoleElmish
 						{
 							SConsole.CursorLeft = (int)column;
 						}
-						if (previousColor.HasValue)
+						if (!previousColor.foreground.HasValue || !previousColor.background.HasValue)
 						{
-							SConsole.ForegroundColor = previousColor.Value;
+							SConsole.ResetColor();
+						}
+						if (previousColor.foreground.HasValue)
+						{
+							SConsole.ForegroundColor = previousColor.foreground.Value;
+						}
+						if (previousColor.background.HasValue)
+						{
+							SConsole.BackgroundColor = previousColor.background.Value;
 						}
 						SConsole.Write(sb.ToString());
 						sb.Clear();
+						previousColor = default;
 					}
 				}
 			}
