@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using SConsole = System.Console;
 
 namespace ConsoleElmish
@@ -27,6 +28,9 @@ namespace ConsoleElmish
 		private uint startRow;
 		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> characterBuffer = new Dictionary<(uint, uint), ColoredItem<char>>();
 		private Buffer mainBuffer;
+
+		private readonly SemaphoreSlim printingRights = new SemaphoreSlim(1);
+		private int waitingToPrint = 0;
 
 		private Renderer(uint? height, uint? width, ConsoleColor? defaultForeground)
 		{
@@ -69,75 +73,94 @@ namespace ConsoleElmish
 
 		private void Print()
 		{
-			StringBuilder sb = new StringBuilder((int)Width);
-			uint column;
-			(ConsoleColor? foreground, ConsoleColor? background) previousColor;
-			for (uint r = 0; r < Height; r++)
+			try
 			{
-				sb.Clear();
-				column = 0;
-				previousColor = default;
-				for (uint c = 0; c < Width; c++)
+				Interlocked.Increment(ref waitingToPrint);
+				printingRights.Wait();
+				Interlocked.Decrement(ref waitingToPrint);
+				if (waitingToPrint > 0)
 				{
-					ColoredItem<char>? old = characterBuffer.TryGetValue((r, c), out var o) ? (ColoredItem<char>?)o : null;
-					ColoredItem<char>? current = mainBuffer[(r, c)];
-
-					if (current.HasValue)
-					{
-						characterBuffer[(r, c)] = current.Value;
-					}
-					else
-					{
-						characterBuffer.Remove((r, c));
-					}
-
-					if (old == current)
-					{
-						PrintSB();
-						column = c + 1;
-					}
-					else if (current.HasValue && (current.Value.Foreground != previousColor.foreground || current.Value.Background != previousColor.background))
-					{
-						PrintSB();
-						column = c;
-						sb.Append(current.Value.Item);
-						previousColor = (current.Value.Foreground, current.Value.Background);
-					}
-					else
-					{
-						sb.Append(current.HasValue ? current.Value.Item : ' ');
-					}
+					return;
 				}
-				PrintSB();
 
-				void PrintSB()
+				StringBuilder sb = new StringBuilder((int)Width);
+				uint column;
+				(ConsoleColor? foreground, ConsoleColor? background) previousColor;
+				for (uint r = 0; r < Height; r++)
 				{
-					if (sb.Length > 0)
+					sb.Clear();
+					column = 0;
+					previousColor = default;
+					for (uint c = 0; c < Width; c++)
 					{
-						if (SConsole.CursorTop != (int)(startRow + r) || SConsole.CursorLeft != (int)column)
+						ColoredItem<char>? old = characterBuffer.TryGetValue((r, c), out var o) ? (ColoredItem<char>?)o : null;
+						ColoredItem<char>? current = mainBuffer[(r, c)];
+
+						if (current.HasValue)
 						{
-							SConsole.SetCursorPosition((int)column, (int)(startRow + r));
+							characterBuffer[(r, c)] = current.Value;
 						}
-						if (!previousColor.foreground.HasValue || !previousColor.background.HasValue)
+						else
 						{
-							SConsole.ResetColor();
+							characterBuffer.Remove((r, c));
 						}
-						if (previousColor.foreground.HasValue)
+
+						if (old == current)
 						{
-							SConsole.ForegroundColor = previousColor.foreground.Value;
+							PrintSB();
+							column = c + 1;
 						}
-						if (previousColor.background.HasValue)
+						else if (current.HasValue && (current.Value.Foreground != previousColor.foreground || current.Value.Background != previousColor.background))
 						{
-							SConsole.BackgroundColor = previousColor.background.Value;
+							PrintSB();
+							column = c;
+							sb.Append(current.Value.Item);
+							previousColor = (current.Value.Foreground, current.Value.Background);
 						}
-						SConsole.Write(sb.ToString());
-						sb.Clear();
-						previousColor = default;
+						else
+						{
+							sb.Append(current.HasValue ? current.Value.Item : ' ');
+						}
+					}
+					PrintSB();
+
+					if (waitingToPrint > 0)
+					{
+						return;
+					}
+
+					void PrintSB()
+					{
+						if (sb.Length > 0)
+						{
+							if (SConsole.CursorTop != (int)(startRow + r) || SConsole.CursorLeft != (int)column)
+							{
+								SConsole.SetCursorPosition((int)column, (int)(startRow + r));
+							}
+							if (!previousColor.foreground.HasValue || !previousColor.background.HasValue)
+							{
+								SConsole.ResetColor();
+							}
+							if (previousColor.foreground.HasValue)
+							{
+								SConsole.ForegroundColor = previousColor.foreground.Value;
+							}
+							if (previousColor.background.HasValue)
+							{
+								SConsole.BackgroundColor = previousColor.background.Value;
+							}
+							SConsole.Write(sb.ToString());
+							sb.Clear();
+							previousColor = default;
+						}
 					}
 				}
 			}
-
-			SConsole.ResetColor();
+			finally
+			{
+				SConsole.ResetColor();
+				printingRights.Release();
+			}
 		}
 
 		public void Stop()
