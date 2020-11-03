@@ -26,11 +26,13 @@ namespace ConsoleElmish
 		public ConsoleColor DefaultForeground { get; }
 
 		private uint startRow;
-		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> characterBuffer = new Dictionary<(uint, uint), ColoredItem<char>>();
+		private IDictionary<(uint row, uint column), ColoredItem<char>> characterBuffer;
 		private Buffer mainBuffer;
 
 		private readonly SemaphoreSlim printingRights = new SemaphoreSlim(1);
 		private int waitingToPrint = 0;
+
+		private bool isInited = false;
 
 		private Renderer(uint? height, uint? width, ConsoleColor? defaultForeground)
 		{
@@ -61,24 +63,32 @@ namespace ConsoleElmish
 				startRow = (uint)SConsole.CursorTop;
 			}
 
+			characterBuffer = new Dictionary<(uint, uint), ColoredItem<char>>();
+
 			mainBuffer = new Buffer
 			{
 				{ new Area(0, 0, Height, Width), main }
 			};
 			mainBuffer.RePrint += Print;
 
-			Print();
+			isInited = true;
 
+			Print();
 		}
 
 		private void Print()
 		{
+			if (!isInited)
+			{
+				return;
+			}
+
 			try
 			{
 				Interlocked.Increment(ref waitingToPrint);
 				printingRights.Wait();
 				Interlocked.Decrement(ref waitingToPrint);
-				if (waitingToPrint > 0)
+				if (waitingToPrint > 0 || !isInited)
 				{
 					return;
 				}
@@ -124,7 +134,7 @@ namespace ConsoleElmish
 					}
 					PrintSB();
 
-					if (waitingToPrint > 0)
+					if (waitingToPrint > 0 || !isInited)
 					{
 						return;
 					}
@@ -166,6 +176,14 @@ namespace ConsoleElmish
 		public void Stop()
 		{
 			mainBuffer.RePrint -= Print;
+
+			isInited = false;
+			Interlocked.Increment(ref waitingToPrint);
+			printingRights.Wait();
+			Interlocked.Decrement(ref waitingToPrint);
+			printingRights.Release();
+
+			mainBuffer.Dispose();
 
 			SConsole.SetCursorPosition((int)(Width - 1), (int)(startRow + Height - 1));
 			SConsole.WriteLine();

@@ -11,7 +11,7 @@ namespace ConsoleElmish
 
 		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> buffer = new Dictionary<(uint, uint), ColoredItem<char>>();
 
-		public ColoredItem<char>? this[(uint, uint) position]
+		public ColoredItem<char>? this[(uint row, uint column) position]
 		{
 			get => buffer.TryGetValue(position, out var curr) ? (ColoredItem<char>?)curr : null;
 			set
