@@ -69,7 +69,7 @@ namespace ConsoleElmish
 			{
 				{ new Area(0, 0, Height, Width), main }
 			};
-			mainBuffer.RePrint += Print;
+			mainBuffer.RePrint += RePrint;
 
 			isInited = true;
 
@@ -172,10 +172,11 @@ namespace ConsoleElmish
 				printingRights.Release();
 			}
 		}
+		private void RePrint(Area changedArea) => Print();
 
 		public void Stop()
 		{
-			mainBuffer.RePrint -= Print;
+			mainBuffer.RePrint -= RePrint;
 
 			isInited = false;
 			Interlocked.Increment(ref waitingToPrint);

@@ -20,7 +20,7 @@ namespace ConsoleApp
 				Environment.Exit(0);
 			};
 
-			renderer.Render(new ClockComponent());
+			renderer.Render(new DualComponent());
 
 			return Task.Delay(-1);
 		}

@@ -7,7 +7,7 @@ namespace ConsoleElmish
 {
 	public class Buffer : IEnumerable<((uint row, uint column) position, ColoredItem<char> item)>, IDisposable
 	{
-		public event Action RePrint;
+		public event Action<Area> RePrint;
 
 		private readonly IDictionary<(uint row, uint column), ColoredItem<char>> buffer = new Dictionary<(uint, uint), ColoredItem<char>>();
 
@@ -48,17 +48,17 @@ namespace ConsoleElmish
 		public void Add(Area area, ColoredItem<IRenderable> item)
 		{
 			Buffer innerBuffer = item.Item.Render(area.Height, area.Width);
-			CopyFromBuffer(innerBuffer, area, item.Foreground, item.Background);
+			CopyFromBuffer(innerBuffer, area, new Area(0, 0, area.Height, area.Width), item.Foreground, item.Background);
 
 			disposables.Add((item.Item, innerBuffer));
 
 			innerBuffer.RePrint += InnerBuffer_RePrint;
 			item.Item.ReRender += Item_ReRender;
 
-			void InnerBuffer_RePrint()
+			void InnerBuffer_RePrint(Area changedArea)
 			{
-				CopyFromBuffer(innerBuffer, area, item.Foreground, item.Background);
-				RePrint?.Invoke();
+				CopyFromBuffer(innerBuffer, area, changedArea, item.Foreground, item.Background);
+				RePrint?.Invoke(new Area(area.Row + changedArea.Row, area.Column + changedArea.Column, changedArea.Height, changedArea.Width));
 			}
 			void Item_ReRender()
 			{
@@ -69,15 +69,17 @@ namespace ConsoleElmish
 				innerBuffer.Dispose();
 
 				Add(area, item);
-				RePrint?.Invoke();
+				RePrint?.Invoke(area);
 			}
 		}
 
-		private void CopyFromBuffer(Buffer innerBuffer, Area area, ConsoleColor? foregorund, ConsoleColor? background)
+		private void CopyFromBuffer(Buffer innerBuffer, Area area, Area subArea, ConsoleColor? foregorund, ConsoleColor? background)
 		{
-			foreach (var p in area.Offsets)
+			foreach (var (row, column) in subArea.Offsets)
 			{
-				this[(area.Row + p.row, area.Column + p.column)] = innerBuffer[p]?.WithDefaultColors(foregorund, background);
+				this[(area.Row + subArea.Row + row, area.Column + subArea.Column + column)] =
+					innerBuffer[(subArea.Row + row, subArea.Column + column)]?
+						.WithDefaultColors(foregorund, background);
 			}
 		}
 

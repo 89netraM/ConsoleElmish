@@ -40,13 +40,10 @@ namespace ConsoleApp
 			{
 				{
 					new Area(0, 0, height, width),
-					new BorderComponent(
-						new TextComponent(
-							State.Time.ToString("HH:mm:ss"),
-							State.IsCentered
-						).WithColors(foreground: ConsoleColor.Red),
-						BorderComponent.Style.Thick
-					)
+					new TextComponent(
+						State.Time.ToString("HH:mm:ss"),
+						State.IsCentered
+					).WithColors(foreground: ConsoleColor.Red)
 				}
 			};
 		}
