@@ -10,7 +10,7 @@ namespace ConsoleApp
 	{
 		private readonly Timer timer;
 
-		public ClockComponent() : base(new ClockState(DateTime.Now, true))
+		public ClockComponent() : base(new ClockState(DateTime.Now, TextComponent.Alignment.Center))
 		{
 			timer = new Timer(1000.0d);
 			timer.AutoReset = true;
@@ -23,14 +23,23 @@ namespace ConsoleApp
 
 		private void Timer_Elapsed(object sender, ElapsedEventArgs e)
 		{
-			State = new ClockState(e.SignalTime, State.IsCentered);
+			State = new ClockState(e.SignalTime, State.TextAlignment);
 		}
 
 		private void Input_KeyDown(ConsoleKeyInfo info)
 		{
 			if (info.Key == ConsoleKey.Spacebar)
 			{
-				State = new ClockState(State.Time, !State.IsCentered);
+				State = new ClockState(
+					State.Time,
+					State.TextAlignment switch
+					{
+						TextComponent.Alignment.Left => TextComponent.Alignment.Center,
+						TextComponent.Alignment.Center => TextComponent.Alignment.Right,
+						TextComponent.Alignment.Right => TextComponent.Alignment.Left,
+						_ => throw new NotImplementedException(),
+					}
+				);
 			}
 		}
 
@@ -42,7 +51,7 @@ namespace ConsoleApp
 					new Area(0, 0, height, width),
 					new TextComponent(
 						State.Time.ToString("HH:mm:ss"),
-						State.IsCentered
+						State.TextAlignment
 					).WithColors(foreground: ConsoleColor.Red)
 				}
 			};
@@ -61,12 +70,12 @@ namespace ConsoleApp
 	public readonly struct ClockState
 	{
 		public DateTime Time { get; }
-		public bool IsCentered { get; }
+		public TextComponent.Alignment TextAlignment { get; }
 
-		public ClockState(DateTime time, bool isCentered)
+		public ClockState(DateTime time, TextComponent.Alignment textAlignment)
 		{
 			Time = time;
-			IsCentered = isCentered;
+			TextAlignment = textAlignment;
 		}
 	}
 }

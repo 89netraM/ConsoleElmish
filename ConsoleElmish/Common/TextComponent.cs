@@ -6,12 +6,15 @@ namespace ConsoleElmish.Common
 	public class TextComponent : Component<EmptyState>
 	{
 		public string Text { get; }
-		public bool IsCentered { get; }
+		public Alignment TextAlignment { get; }
 
-		public TextComponent(string text, bool isCentered = false)
+		public TextComponent(string text) : this(text, false) { }
+		public TextComponent(string text, bool isCentered) :
+			this(text, isCentered ? Alignment.Center : Alignment.Left) { }
+		public TextComponent(string text, Alignment textAlignment)
 		{
 			Text = text ?? throw new ArgumentNullException(nameof(text));
-			IsCentered = isCentered;
+			TextAlignment = textAlignment;
 		}
 
 		public override Buffer Render(uint height, uint width)
@@ -32,14 +35,7 @@ namespace ConsoleElmish.Common
 					sb.Append(words[w++]);
 				}
 
-				if (IsCentered)
-				{
-					buffer.Add(new Area(r, (width - (uint)sb.Length) / 2, 1, (uint)sb.Length), sb.ToString());
-				}
-				else
-				{
-					buffer.Add(new Area(r, 0, 1, (uint)sb.Length), sb.ToString());
-				}
+				buffer.Add(new Area(r, LeftPadding((uint)sb.Length, width), 1, (uint)sb.Length), sb.ToString());
 			}
 
 			if (w != words.Length)
@@ -48,6 +44,21 @@ namespace ConsoleElmish.Common
 			}
 
 			return buffer;
+		}
+
+		private uint LeftPadding(uint textWidth, uint totalWidth) => TextAlignment switch
+		{
+			Alignment.Left => 0,
+			Alignment.Center => (totalWidth - textWidth) / 2,
+			Alignment.Right => totalWidth - textWidth,
+			_ => throw new ArgumentException("Unssuported alignment enum"),
+		};
+
+		public enum Alignment
+		{
+			Left,
+			Center,
+			Right
 		}
 	}
 }
